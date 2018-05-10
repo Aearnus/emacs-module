@@ -1,6 +1,7 @@
 #include "emacs-module.h"
 
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include <luajit-2.1/lua.h>
 #include <luajit-2.1/lauxlib.h>
@@ -8,6 +9,18 @@
 
 #define FUCK_GPL int plugin_is_GPL_compatible
 FUCK_GPL;
+
+static emacs_value slow_arbitrary_funcall(emacs_env *env, const char* function_name, ptrdiff_t nargs, ...) {
+    emacs_value f_sym = env->intern(env, function_name);
+    emacs_value *f_args = malloc(sizeof(emacs_value) * nargs);
+    va_list args;
+    va_start(args, nargs);
+    for (int i = 0; i < nargs; i++) {
+        f_args[i] = va_arg(args, emacs_value);
+    }
+    va_end(args);
+    return env->funcall(env, f_sym, nargs, f_args);
+}
 
 static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
     lua_State *L = lua_open();
@@ -26,6 +39,7 @@ static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], voi
     const char *luaout = lua_tolstring(L, -1, &luaout_size);
     emacs_value out = env->make_string(env, luaout, luaout_size);
     lua_close(L);
+    free(luabuffer);
     return out;
 }
 
@@ -42,15 +56,12 @@ int emacs_module_init(struct emacs_runtime *ert) {
     );
     emacs_value func_sym = env->intern(env, "lua");
     
-    emacs_value defalias = env->intern(env, "defalias");
-    emacs_value defalias_args[] = {func_sym, emacsfunc};
-    env->funcall(env, defalias, 2, defalias_args);
-    
+    // provide the lua function
+    slow_arbitrary_funcall(env, "defalias", 2, func_sym, emacsfunc);
+
     // provide the feature `module`
     emacs_value module_sym = env->intern(env, "module");
-    emacs_value provide = env->intern(env, "provide");
-    emacs_value provide_args[] = { module_sym };
-    env->funcall(env, provide, 1, provide_args);
+    slow_arbitrary_funcall(env, "provide", 1, module_sym);
     
     return 0;
 }
