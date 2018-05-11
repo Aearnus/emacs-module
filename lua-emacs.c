@@ -9,6 +9,26 @@
 #include <luajit-2.1/lualib.h>
 
 #include <stdlib.h>
+#include <string.h>
+
+struct lua_funcall_userdata {
+    emacs_env *env;
+    char* function_name;
+    //NOTE: this array is null-terminated
+    //as in: this array is over at the first NULL
+    emacs_value *args;
+};
+static int slow_arbitrary_lua_funcall(lua_State *L) {
+    struct lua_funcall_userdata *userdata = lua_touserdata(L, lua_upvalueindex(1));
+    emacs_value f_sym = userdata->env->intern(userdata->env, userdata->function_name);
+    intmax_t nargs = 0;
+    for (; userdata->args[nargs] != NULL; nargs++);
+    //return env->funcall(env, f_sym, nargs, f_args);
+    userdata->env->funcall(userdata->env, f_sym, nargs, userdata->args);
+    
+    //TODO: change this to 1 -- the 1 emacs_value returned by the funcall
+    return 0;
+}
 
 static void compile_elisp_table(lua_State *L) {
     //NOTE: THIS FUNCTION ASSUMES THE TOP OF THE STACK IS THE ELISP TABLE
@@ -35,8 +55,17 @@ static void create_elisp_functions_table(lua_State *L, emacs_env *env) {
         function_name_buf = malloc(function_name_len);
         env->copy_string_contents(env, function_value, function_name_buf, &function_name_len);
         lua_pushstring(L, function_name_buf);
+        //here's where we actually create the function itself
+        struct lua_funcall_userdata *userdata = lua_newuserdata(L, sizeof(struct lua_funcall_userdata));
+        userdata->env = env;
+        userdata->function_name = malloc(strlen(function_name_buf) + 1);
+        strcpy(userdata->function_name, function_name_buf);
         free(function_name_buf);
-        lua_pushstring(L, "TODO");
+        //TODO: passing data to elisp functions
+        userdata->args = NULL;
+        //the userdata is now created and at the top of the stack. thus, it'll
+        //automatically be used as the following C closure's upvalue
+        lua_pushcclosure(L, &slow_arbitrary_lua_funcall, 1);
         lua_settable(L, -3);
     }
     //add the function table to the elisp table
