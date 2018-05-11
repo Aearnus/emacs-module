@@ -1,0 +1,2 @@
+(require 'luajit)
+(provide 'module)

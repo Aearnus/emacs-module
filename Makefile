@@ -1,5 +1,5 @@
 all:
-	gcc -fPIC -shared -lluajit-5.1 -g -Wall module.c -o module.so
+	gcc -fPIC -shared -lluajit-5.1 -g -Wall module.c -o luajit.so
 	
 clean:
-	-rm module.so
+	-rm luajit.so

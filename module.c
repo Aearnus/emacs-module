@@ -60,7 +60,7 @@ int emacs_module_init(struct emacs_runtime *ert) {
     slow_arbitrary_funcall(env, "defalias", 2, func_sym, emacsfunc);
 
     // provide the feature `module`
-    emacs_value module_sym = env->intern(env, "module");
+    emacs_value module_sym = env->intern(env, "luajit");
     slow_arbitrary_funcall(env, "provide", 1, module_sym);
     
     return 0;
