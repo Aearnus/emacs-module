@@ -13,10 +13,9 @@
 #define FUCK_GPL int plugin_is_GPL_compatible
 FUCK_GPL;
 
+lua_State *L;
 
-static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-    lua_State *L = lua_emacs_init(env);
-    
+static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {    
     char *luabuffer;
     intmax_t luabuffer_size;
     env->copy_string_contents(env, args[0], NULL, &luabuffer_size);
@@ -29,7 +28,6 @@ static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], voi
     size_t luaout_size;
     const char *luaout = lua_tolstring(L, -1, &luaout_size);
     emacs_value out = env->make_string(env, luaout, luaout_size);
-    lua_close(L);
     free(luabuffer);
     return out;
 }
@@ -37,6 +35,7 @@ static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], voi
 
 int emacs_module_init(struct emacs_runtime *ert) {
     emacs_env *env = ert->get_environment(ert);
+    L = lua_emacs_init(env);
     // bind the function `lua` into elisp
     emacs_value emacsfunc = env->make_function(
         env, 
