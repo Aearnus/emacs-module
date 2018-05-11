@@ -1,5 +1,8 @@
 #include "emacs-module.h"
 
+#include "lua-emacs.h"
+#include "emacs-interaction.h"
+
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -10,21 +13,9 @@
 #define FUCK_GPL int plugin_is_GPL_compatible
 FUCK_GPL;
 
-static emacs_value slow_arbitrary_funcall(emacs_env *env, const char* function_name, ptrdiff_t nargs, ...) {
-    emacs_value f_sym = env->intern(env, function_name);
-    emacs_value *f_args = malloc(sizeof(emacs_value) * nargs);
-    va_list args;
-    va_start(args, nargs);
-    for (int i = 0; i < nargs; i++) {
-        f_args[i] = va_arg(args, emacs_value);
-    }
-    va_end(args);
-    return env->funcall(env, f_sym, nargs, f_args);
-}
 
 static emacs_value Flua(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data) {
-    lua_State *L = lua_open();
-    luaL_openlibs(L);
+    lua_State *L = lua_emacs_init(env);
     
     char *luabuffer;
     intmax_t luabuffer_size;
