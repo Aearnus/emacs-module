@@ -62,7 +62,8 @@ static void create_elisp_functions_table(lua_State *L, emacs_env *env) {
         strcpy(userdata->function_name, function_name_buf);
         free(function_name_buf);
         //TODO: passing data to elisp functions
-        userdata->args = NULL;
+        userdata->args = malloc(1);
+        userdata->args[0] = NULL;
         //the userdata is now created and at the top of the stack. thus, it'll
         //automatically be used as the following C closure's upvalue
         lua_pushcclosure(L, &slow_arbitrary_lua_funcall, 1);
