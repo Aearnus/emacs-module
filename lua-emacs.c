@@ -12,6 +12,10 @@
 #include <string.h>
 #include <stdio.h>
 
+//here's a test case:
+//(lua "elisp.functions['hello-world'](); return 'done!'")
+
+
 struct lua_funcall_userdata {
     emacs_env *env;
     char* function_name;
@@ -66,7 +70,6 @@ static void create_elisp_functions_table(lua_State *L, emacs_env *env) {
         struct lua_funcall_userdata *userdata = malloc(sizeof(struct lua_funcall_userdata));
         userdata->env = malloc(sizeof(emacs_env));
         memcpy(userdata->env, env, sizeof(emacs_env));
-        //(lua "elisp.functions['hello-world']()")
         userdata->function_name = function_name_buf;
         //the userdata is now created and at the top of the stack. thus, it'll
         //automatically be used as the following C closure's upvalue
