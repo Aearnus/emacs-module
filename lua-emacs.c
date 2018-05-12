@@ -10,21 +10,27 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 struct lua_funcall_userdata {
     emacs_env *env;
     char* function_name;
-    //NOTE: this array is null-terminated
-    //as in: this array is over at the first NULL
-    emacs_value *args;
 };
 static int slow_arbitrary_lua_funcall(lua_State *L) {
     struct lua_funcall_userdata *userdata = lua_touserdata(L, lua_upvalueindex(1));
-    emacs_value f_sym = userdata->env->intern(userdata->env, userdata->function_name);
-    intmax_t nargs = 0;
-    for (; userdata->args[nargs] != NULL; nargs++);
-    //return env->funcall(env, f_sym, nargs, f_args);
-    userdata->env->funcall(userdata->env, f_sym, nargs, userdata->args);
+    emacs_value f_sym; 
+    emacs_env *env = userdata->env;
+    const char* function_name = userdata->function_name;
+    emacs_value (*intern) (emacs_env*, const char*) = env->intern;
+    f_sym = intern(env, function_name);
+    if (f_sym != NULL) {
+        intmax_t nargs = 0;
+        emacs_value *args = NULL;
+        //TODO: YOU CANNOT CALL FUNCTIONS WITH MULTIPLE ARGUMENTS RIGHT NOW
+        userdata->env->funcall(userdata->env, f_sym, nargs, args);
+    } else {
+        printf("Woah -- tried to call a null symbol function named %s from Lua.\n", userdata->function_name);
+    }
     
     //TODO: change this to 1 -- the 1 emacs_value returned by the funcall
     return 0;
@@ -54,18 +60,17 @@ static void create_elisp_functions_table(lua_State *L, emacs_env *env) {
         env->copy_string_contents(env, function_value, NULL, &function_name_len);
         function_name_buf = malloc(function_name_len);
         env->copy_string_contents(env, function_value, function_name_buf, &function_name_len);
+        printf("Pushing the lua function name string %s\n", function_name_buf);
         lua_pushstring(L, function_name_buf);
         //here's where we actually create the function itself
-        struct lua_funcall_userdata *userdata = lua_newuserdata(L, sizeof(struct lua_funcall_userdata));
-        userdata->env = env;
-        userdata->function_name = malloc(strlen(function_name_buf) + 1);
-        strcpy(userdata->function_name, function_name_buf);
-        free(function_name_buf);
-        //TODO: passing data to elisp functions
-        userdata->args = malloc(1);
-        userdata->args[0] = NULL;
+        struct lua_funcall_userdata *userdata = malloc(sizeof(struct lua_funcall_userdata));
+        userdata->env = malloc(sizeof(emacs_env));
+        memcpy(userdata->env, env, sizeof(emacs_env));
+        //(lua "elisp.functions['hello-world']()")
+        userdata->function_name = function_name_buf;
         //the userdata is now created and at the top of the stack. thus, it'll
         //automatically be used as the following C closure's upvalue
+        lua_pushlightuserdata (L, (void*)userdata);
         lua_pushcclosure(L, &slow_arbitrary_lua_funcall, 1);
         lua_settable(L, -3);
     }

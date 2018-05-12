@@ -52,6 +52,6 @@ int emacs_module_init(struct emacs_runtime *ert) {
     // provide the feature `module`
     emacs_value module_sym = env->intern(env, "luajit");
     slow_arbitrary_funcall(env, "provide", 1, module_sym);
-    
+
     return 0;
 }
