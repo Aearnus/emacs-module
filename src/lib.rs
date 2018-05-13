@@ -1,33 +1,16 @@
 #![crate_type = "dylib"]
-mod bindings;
-use std::ffi::CString;
 extern crate libc;
+mod bindings;
+mod emacs_interaction;
+
+use emacs_interaction::*;
+
+use std::ffi::CString;
+
 
 pub static plugin_is_GPL_compatible: ::std::os::raw::c_int = 0;
 
 static mut L: *mut bindings::lua_State = 0 as *mut bindings::lua_State;
-
-fn safe_intern(env: *mut bindings::emacs_env, name: String) -> bindings::emacs_value {
-    assert!(env != 0 as *mut bindings::emacs_env_26, "Emacs env is null ptr");
-    unsafe {
-        (*env).intern.unwrap()(env, CString::new(name).unwrap().as_ptr())
-    }
-}
-
-
-fn emacs_value_to_string(env: *mut bindings::emacs_env, value: bindings::emacs_value) -> String {
-    let mut buf_len: isize = 0;
-    let buf_len_ptr = &mut buf_len as *mut isize;
-    unsafe {
-        (*env).copy_string_contents.unwrap()(env, value, 0 as *mut i8, buf_len_ptr);
-    }
-    let buf: Vec<u8> = Vec::with_capacity(buf_len as usize);
-    unsafe {
-        (*env).copy_string_contents.unwrap()(env, value, buf.as_ptr() as *mut i8, buf_len_ptr);
-    }
-    String::from_utf8(buf).expect("Invalid UTF-8 in emacs string!")
-}
-
 
 #[no_mangle]
 pub unsafe extern "C" fn Flua(env: *mut bindings::emacs_env, nargs: libc::ptrdiff_t, args: *mut bindings::emacs_value, data: *mut std::os::raw::c_void) -> bindings::emacs_value {
@@ -62,8 +45,8 @@ pub extern "C" fn emacs_module_init(ert: *mut bindings::emacs_runtime) {
         // provide the lua function
         bindings::slow_arbitrary_funcall(env, CString::new("defalias").unwrap().as_ptr(), 2, func_sym, func);
         
-        // provide the feature `luajit`
-        let module_sym: bindings::emacs_value = safe_intern(env, "luajit".to_string());
+        // provide the feature `mefa`
+        let module_sym: bindings::emacs_value = safe_intern(env, "mefa".to_string());
         bindings::slow_arbitrary_funcall(env, CString::new("provide").unwrap().as_ptr(), 1, module_sym);
 
     }
