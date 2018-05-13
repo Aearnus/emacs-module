@@ -1,7 +1,7 @@
-FILES = lua-emacs.c emacs-interaction.c module.c
+FILES = lua-emacs.c emacs-interaction.c
 
 all:
-	gcc -fPIC -shared -lluajit-5.1 -g -Wall $(FILES) -o luajit.so
+	gcc -L$(shell pwd)/target/release/ -lemacs_module -fPIC -shared -lluajit-5.1 -g -Wall $(FILES) -o luajit.so
 	
 clean:
 	-rm luajit.so

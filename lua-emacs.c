@@ -15,6 +15,8 @@
 //here's a test case:
 //(lua "elisp.functions['hello-world'](); return 'done!'")
 
+#define FUCK_GPL int plugin_is_GPL_compatible
+FUCK_GPL;
 
 struct lua_funcall_userdata {
     emacs_env *env;
