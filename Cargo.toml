@@ -1,0 +1,12 @@
+[package]
+name = "emacs-module"
+version = "0.1.0"
+authors = ["T, C"]
+
+[dependencies]
+libc = "0.2.40"
+
+[lib]
+crate-type = ["dylib"]
+name = "emacs_module"
+path = "src/lib.rs"
