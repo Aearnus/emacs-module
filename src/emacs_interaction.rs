@@ -37,3 +37,9 @@ pub fn slow_arbitrary_funcall(env: *mut emacs_env, function_name: String, args: 
             .expect("Invalid ptr to fun call.")(env, f_sym, args.len() as isize, args.as_mut_ptr())
     }
 } 
+
+pub fn nth_in_list(env: *mut emacs_env, arg: emacs_value, index: intmax_t) -> emacs_value {
+    unsafe {
+        slow_arbitrary_funcall(env, "nth".to_string(), &mut [(*env).make_integer.unwrap()(env, index)])
+    }
+}
