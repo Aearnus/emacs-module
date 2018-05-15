@@ -8,6 +8,7 @@ use emacs_interaction::*;
 use lua::LuaState;
 
 use std::ffi::CString;
+use std::ffi::CStr;
 
 
 pub static plugin_is_GPL_compatible: std::os::raw::c_int = 0;
@@ -23,7 +24,8 @@ pub unsafe extern "C" fn Flua(env: *mut bindings::emacs_env, nargs: libc::ptrdif
     L.pcall(0, 1, 0);
         
     let out_string = L.tostring(-1);
-    (*env).make_string.unwrap()(env, CString::new(out_string).unwrap().as_ptr(), out_string.len() as isize)
+    let out_c_string = CString::new(out_string).expect("Couldn't allocate out string");
+    (*env).make_string.unwrap()(env, out_c_string.as_ptr(), out_c_string.as_bytes_with_nul().len() as isize)
 }
 
 #[no_mangle]
