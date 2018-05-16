@@ -3,7 +3,7 @@ use bindings::*;
 use std::ffi::CString;
 
 
-pub fn emacs_value_to_string(env: *mut emacs_env, value: emacs_value) -> String {
+pub fn to_string(env: *mut emacs_env, value: emacs_value) -> String {
     let mut buf_len: isize = 0;
     let buf_len_ptr = &mut buf_len as *mut isize;
     unsafe {
@@ -19,6 +19,14 @@ pub fn emacs_value_to_string(env: *mut emacs_env, value: emacs_value) -> String 
     }
     String::from_utf8(buf)
         .expect("Invalid UTF-8 in emacs string!")
+}
+
+pub fn to_int(env: *mut emacs_env, value: emacs_value) -> i64 {
+    unsafe {
+        (*env)
+            .extract_integer
+            .expect("Invalid ptr to extract_integer.")(env, value)
+    }
 }
 
 pub fn safe_intern(env: *mut emacs_env, name: String) -> emacs_value {

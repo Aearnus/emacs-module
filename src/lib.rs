@@ -1,14 +1,13 @@
 #![crate_type = "dylib"]
 extern crate libc;
 mod bindings;
-mod emacs_interaction;
+mod emacs;
 mod lua;
 
-use emacs_interaction::*;
+use emacs::*;
 use lua::LuaState;
 
 use std::ffi::CString;
-use std::ffi::CStr;
 
 
 pub static plugin_is_GPL_compatible: std::os::raw::c_int = 0;
@@ -18,7 +17,7 @@ static mut L: LuaState = LuaState { raw_ptr: 0 as *mut bindings::lua_State, };
 #[no_mangle]
 pub unsafe extern "C" fn Flua(env: *mut bindings::emacs_env, nargs: libc::ptrdiff_t, args: *mut bindings::emacs_value, data: *mut std::os::raw::c_void) -> bindings::emacs_value {
     assert!(nargs == 1, "Wrong number of arguments passed to `lua`");
-    let lua_string: String = emacs_value_to_string(env, *args);
+    let lua_string: String = to_string(env, *args);
     
     L.lloadstring(lua_string);
     L.pcall(0, 1, 0);

@@ -39,3 +39,16 @@ impl LuaState {
         }
     }
 }
+
+#[macro_export]
+macro_rules! lua_create_table {
+    ( $l:ident, $(, $code:block )* ) => {
+        unsafe {
+            lua_newtable(L.raw_ptr);
+            $(
+                ($code)(L);
+                lua_settable(L.raw_ptr, -3);
+            )*
+        }
+    };
+}
